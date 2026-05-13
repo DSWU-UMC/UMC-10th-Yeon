@@ -1,8 +1,8 @@
 import { Body, Controller, Get, Path, Post, Query, Route, SuccessResponse, Tags } from "tsoa";
 import { reviewAdd } from "../services/restaurant.service.js";
-import { ReviewRequest } from "../dtos/restaurant.dto.js";
+import { ReviewRequest, ReviewResponse } from "../dtos/restaurant.dto.js";
 import { missionAdd, restaurantMissionList } from "../../missions/services/mission.service.js";
-import { AddMissionRequest } from "../../missions/dtos/mission.dto.js";
+import { AddMissionRequest, MissionListResponse, MissionResponse } from "../../missions/dtos/mission.dto.js";
 import { ApiResponse, success } from "../../../common/responses/response.js";
 
 @Route("restaurants")
@@ -13,7 +13,7 @@ export class RestaurantController extends Controller {
   public async addReview(
     @Path() restaurantId: number,
     @Body() body: ReviewRequest,
-  ): Promise<ApiResponse<object>> {
+  ): Promise<ApiResponse<ReviewResponse>> {
     this.setStatus(201);
     const review = await reviewAdd({ ...body, restaurantId });
     return success(review);
@@ -24,7 +24,7 @@ export class RestaurantController extends Controller {
   public async addMission(
     @Path() restaurantId: number,
     @Body() body: AddMissionRequest,
-  ): Promise<ApiResponse<object>> {
+  ): Promise<ApiResponse<MissionResponse>> {
     this.setStatus(201);
     const mission = await missionAdd({ ...body, restaurantId });
     return success(mission);
@@ -34,7 +34,7 @@ export class RestaurantController extends Controller {
   public async getRestaurantMissions(
     @Path() restaurantId: number,
     @Query() cursor?: number,
-  ): Promise<ApiResponse<object>> {
+  ): Promise<ApiResponse<MissionListResponse>> {
     const result = await restaurantMissionList(restaurantId, cursor);
     return success(result);
   }

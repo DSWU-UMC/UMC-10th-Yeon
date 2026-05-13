@@ -1,6 +1,6 @@
 import { Body, Controller, Patch, Path, Post, Route, SuccessResponse, Tags } from "tsoa";
 import { missionChallenge, missionComplete } from "../services/mission.service.js";
-import { ChallengeMissionRequest } from "../dtos/mission.dto.js";
+import { ChallengeMissionRequest, MissionRecordResponse } from "../dtos/mission.dto.js";
 import { ApiResponse, success } from "../../../common/responses/response.js";
 
 @Route("missions")
@@ -11,7 +11,7 @@ export class MissionController extends Controller {
   public async challengeMission(
     @Path() missionId: number,
     @Body() body: ChallengeMissionRequest,
-  ): Promise<ApiResponse<object>> {
+  ): Promise<ApiResponse<MissionRecordResponse>> {
     this.setStatus(201);
     const record = await missionChallenge({ userId: body.userId, missionId });
     return success(record);
@@ -20,7 +20,7 @@ export class MissionController extends Controller {
   @Patch("records/{recordId}/complete")
   public async completeMission(
     @Path() recordId: number,
-  ): Promise<ApiResponse<object>> {
+  ): Promise<ApiResponse<MissionRecordResponse>> {
     const result = await missionComplete(recordId);
     return success(result);
   }

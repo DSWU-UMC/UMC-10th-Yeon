@@ -9,7 +9,14 @@ export interface CreateRestaurantData {
   category: string;
 }
 
-export const responseFromRestaurant = (restaurant: any) => ({
+export interface RestaurantResponse {
+  id: number;
+  name: string;
+  category: string;
+  regionId: number;
+}
+
+export const responseFromRestaurant = (restaurant: any): RestaurantResponse => ({
   id: restaurant.id,
   name: restaurant.name,
   category: restaurant.category,
@@ -29,7 +36,16 @@ export interface CreateReviewData {
   score: number;
 }
 
-export const responseFromReview = (review: any) => ({
+export interface ReviewResponse {
+  id: number;
+  userId: number;
+  restaurantId: number;
+  content: string;
+  score: number;
+  createdAt: Date;
+}
+
+export const responseFromReview = (review: any): ReviewResponse => ({
   id: review.id,
   userId: review.userId,
   restaurantId: review.restaurantId,

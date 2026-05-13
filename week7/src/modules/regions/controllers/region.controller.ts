@@ -1,6 +1,6 @@
 import { Body, Controller, Path, Post, Route, SuccessResponse, Tags } from "tsoa";
 import { restaurantAdd } from "../../restaurants/services/restaurant.service.js";
-import { AddRestaurantRequest } from "../../restaurants/dtos/restaurant.dto.js";
+import { AddRestaurantRequest, RestaurantResponse } from "../../restaurants/dtos/restaurant.dto.js";
 import { ApiResponse, success } from "../../../common/responses/response.js";
 
 @Route("regions")
@@ -11,7 +11,7 @@ export class RegionController extends Controller {
   public async addRestaurant(
     @Path() regionId: number,
     @Body() body: AddRestaurantRequest,
-  ): Promise<ApiResponse<object>> {
+  ): Promise<ApiResponse<RestaurantResponse>> {
     this.setStatus(201);
     const restaurant = await restaurantAdd({ ...body, regionId });
     return success(restaurant);

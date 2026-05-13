@@ -11,7 +11,15 @@ export interface CreateMissionData {
   rewardPoints: number;
 }
 
-export const responseFromMission = (mission: any) => ({
+export interface MissionResponse {
+  id: number;
+  restaurantId: number;
+  name: string;
+  missionSpec: string;
+  rewardPoints: number;
+}
+
+export const responseFromMission = (mission: any): MissionResponse => ({
   id: mission.id,
   restaurantId: mission.restaurantId,
   name: mission.name,
@@ -28,10 +36,23 @@ export interface CreateMissionRecordData {
   missionId: number;
 }
 
-export const responseFromMissionRecord = (record: any) => ({
+export interface MissionRecordResponse {
+  id: number;
+  userId: number;
+  missionId: number;
+  status: string;
+  createdAt: Date;
+}
+
+export const responseFromMissionRecord = (record: any): MissionRecordResponse => ({
   id: record.id,
   userId: record.userId,
   missionId: record.missionId,
   status: record.status,
   createdAt: record.createdAt,
 });
+
+export interface MissionListResponse {
+  missions: MissionResponse[];
+  nextCursor: number | null;
+}
