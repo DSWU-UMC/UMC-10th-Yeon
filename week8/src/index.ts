@@ -26,7 +26,7 @@ app.get("/", (_req: Request, res: Response) => {
 });
 
 const swaggerDocument = JSON.parse(readFileSync("dist/swagger.json", "utf-8"));
-app.use("/index", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const router = express.Router();
 RegisterRoutes(router);
