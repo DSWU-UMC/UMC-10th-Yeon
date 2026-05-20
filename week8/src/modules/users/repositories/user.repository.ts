@@ -16,6 +16,6 @@ export const getUserReviews = async (userId: number, cursor?: number) => {
       restaurant: { select: { name: true } },
     },
   });
-  const nextCursor = reviews.length === 10 ? reviews[reviews.length - 1]?.id : null;
+  const nextCursor = reviews.length === 10 ? (reviews[reviews.length - 1]?.id ?? null) : null;
   return { reviews, nextCursor };
 };

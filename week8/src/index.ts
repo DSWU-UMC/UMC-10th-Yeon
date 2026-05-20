@@ -4,6 +4,8 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+import swaggerUi from "swagger-ui-express";
+import { readFileSync } from "fs";
 import { RegisterRoutes } from "./generated/routes.js";
 import { AppError } from "./common/errors/app.error.js";
 
@@ -22,6 +24,9 @@ app.use(express.urlencoded({ extended: false }));
 app.get("/", (_req: Request, res: Response) => {
   res.send("서버 동작 중!");
 });
+
+const swaggerDocument = JSON.parse(readFileSync("dist/swagger.json", "utf-8"));
+app.use("/index", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const router = express.Router();
 RegisterRoutes(router);

@@ -45,7 +45,7 @@ export const getRestaurantMissions = async (restaurantId: number, cursor?: numbe
     cursor: cursor ? { id: cursor } : undefined,
     orderBy: { id: "asc" },
   });
-  const nextCursor = missions.length === 10 ? missions[missions.length - 1]?.id : null;
+  const nextCursor = missions.length === 10 ? (missions[missions.length - 1]?.id ?? null) : null;
   return { missions, nextCursor };
 };
 
@@ -65,7 +65,7 @@ export const getUserChallengingMissions = async (userId: number, cursor?: number
       },
     },
   });
-  const nextCursor = records.length === 10 ? records[records.length - 1]?.id : null;
+  const nextCursor = records.length === 10 ? (records[records.length - 1]?.id ?? null) : null;
   return { records, nextCursor };
 };
 
