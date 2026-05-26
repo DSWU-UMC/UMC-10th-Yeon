@@ -1,0 +1,36 @@
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { prisma } from "../db.config.js";
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL!,
+    },
+    async (_accessToken, _refreshToken, profile, done) => {
+      try {
+        const email = profile.emails?.[0]?.value;
+        if (!email) return done(new Error("구글 계정에서 이메일 정보를 가져올 수 없습니다."));
+
+        // 이미 가입된 유저면 로그인, 없으면 자동 회원가입
+        const user = await prisma.user.upsert({
+          where: { email },
+          update: {},
+          create: {
+            email,
+            nickname: profile.displayName,
+            password: null,
+          },
+        });
+
+        return done(null, user);
+      } catch (err) {
+        return done(err as Error);
+      }
+    },
+  ),
+);
+
+export default passport;

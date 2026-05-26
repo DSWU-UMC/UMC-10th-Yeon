@@ -6,10 +6,13 @@ export interface JwtPayload {
   userId: number;
 }
 
+// passport의 Express.User 타입에 JWT 페이로드 필드 병합
 declare global {
   namespace Express {
-    interface Request {
-      user?: JwtPayload;
+    interface User {
+      userId?: number;
+      id?: number;
+      nickname?: string;
     }
   }
 }
