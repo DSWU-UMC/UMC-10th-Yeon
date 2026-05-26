@@ -1,39 +1,147 @@
-name: Deploy to EC2
+name: deploy-main
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./week10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: week10/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Inject environment variables
+        run: |
+          cat > .env <<'EOF'
+          ${{ secrets.EC2_DOT_ENV }}
+          EOF
+        env:
+          EC2_DOT_ENV: ${{ secrets.EC2_DOT_ENV }}
+
+      - name: Generate + Build
+        run: npx prisma generate && npm run build
+
+      - name: Prune devDependencies (runtime) + Regenerate Prisma
+        run: |
+          npm prune --omit=dev
+          npx -p prisma prisma generate
+
+      - name: Pack artifact
+        run: |
+          mkdir -p artifact
+          cp -r dist artifact/dist
+          cp -r node_modules artifact/node_modules
+          if [ -d prisma ]; then cp -r prisma artifact/prisma; fi
+          cp package.json package-lock.json artifact/
+          tar -czf ../artifact.tgz -C artifact .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-artifact
+          path: artifact.tgz
+
   deploy:
     runs-on: ubuntu-latest
-
+    needs: build
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/UMC-10th-Yeon
-            git pull origin main
+          name: app-artifact
+          path: .
 
-            cd week10
+      - name: Extract artifact
+        run: |
+          mkdir -p artifact
+          tar -xzf artifact.tgz -C artifact
 
-            # .env 파일 재생성 (GitHub Secrets → EC2 파일)
-            cat > .env << 'EOF'
-            PORT=${{ secrets.PORT }}
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-            GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL }}
-            EOF
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$EC2_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat >> ~/.ssh/config <<END
+          Host target
+              HostName $EC2_HOST
+              Port $EC2_PORT
+              User $EC2_USER
+              IdentityFile ~/.ssh/id_rsa
+              StrictHostKeyChecking no
+          END
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_PORT: ${{ secrets.EC2_PORT }}
+          EC2_USER: ${{ secrets.EC2_USER }}
 
-            npm ci --ignore-scripts
-            npx prisma generate
-            npm run build
+      - name: Copy artifact to Server
+        run: |
+          ssh target 'sudo mkdir -p /opt/app/umc10th/incoming && sudo chown -R ubuntu:ubuntu /opt/app/umc10th'
+          cd artifact
+          rsync -az --delete --ignore-missing-args \
+              --exclude ".git" \
+              --exclude ".env" \
+              ./dist ./prisma ./node_modules ./package.json ./package-lock.json \
+              target:/opt/app/umc10th/incoming/
 
-            pm2 restart umc-api || pm2 start dist/index.js --name umc-api
-            pm2 save
+      - name: Switch Environment
+        run: |
+          ssh target '
+              set -e
+              cd /opt/app/umc10th
+              rm -rf current
+              mv incoming current
+              '
+
+      - name: Create environment variables
+        run: |
+          ssh target "cat > /opt/app/umc10th/current/.env <<'EOF'
+          ${{ secrets.EC2_DOT_ENV }}
+          EOF"
+        env:
+          EC2_DOT_ENV: ${{ secrets.EC2_DOT_ENV }}
+
+      - name: Config systemd service file
+        run: |
+          ssh target 'sudo systemctl unmask UMC_10th || true'
+
+          cat <<'EOF' | ssh target 'sudo tee /etc/systemd/system/UMC_10th.service > /dev/null'
+          [Unit]
+          Description=UMC_10th
+          After=network.target
+
+          [Service]
+          User=ubuntu
+          WorkingDirectory=/opt/app/umc10th/current
+          ExecStart=/bin/bash -lc 'source /home/ubuntu/.nvm/nvm.sh && npm run start:prod'
+          Restart=always
+          Environment=NODE_ENV=production
+
+          [Install]
+          WantedBy=multi-user.target
+          EOF
+
+          ssh target 'sudo systemctl daemon-reload'
+          ssh target 'sudo systemctl enable UMC_10th'
+          ssh target 'sudo systemctl restart UMC_10th'
+
+      - name: Check service status
+        run: |
+          ssh target 'sudo systemctl status UMC_10th -l --no-pager'
