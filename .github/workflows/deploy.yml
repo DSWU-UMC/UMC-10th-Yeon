@@ -93,7 +93,7 @@ jobs:
 
       - name: Copy artifact to Server
         run: |
-          ssh target 'sudo mkdir -p /opt/app/umc10th/incoming && sudo chown -R ubuntu:ubuntu /opt/app/umc10th'
+          ssh target 'sudo mkdir -p /opt/app/umc10th/incoming && sudo chown -R ec2-user:ec2-user /opt/app/umc10th'
           cd artifact
           rsync -az --delete --ignore-missing-args \
               --exclude ".git" \
@@ -128,9 +128,9 @@ jobs:
           After=network.target
 
           [Service]
-          User=ubuntu
+          User=ec2-user
           WorkingDirectory=/opt/app/umc10th/current
-          ExecStart=/bin/bash -lc 'source /home/ubuntu/.nvm/nvm.sh && npm run start:prod'
+          ExecStart=/bin/bash -lc 'source /home/ec2-user/.nvm/nvm.sh && npm run start:prod'
           Restart=always
           Environment=NODE_ENV=production
 
