@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Region {
+  id          Int          @id @default(autoincrement())
+  name        String
+  restaurants Restaurant[]
+
+  @@map("region")
+}
+
+model Restaurant {
+  id       Int       @id @default(autoincrement())
+  regionId Int       @map("region_id")
+  name     String
+  category String
+  region   Region    @relation(fields: [regionId], references: [id])
+  reviews  Review[]
+  missions Mission[]
+
+  @@map("restaurant")
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  nickname       String
+  email          String          @unique
+  password       String?
+  phoneNum       String?         @map("phone_num")
+  birthday       DateTime?
+  point          Int             @default(0)
+  reviews        Review[]
+  missionRecords MissionRecord[]
+
+  @@map("users")
+}
+
+model Review {
+  id           Int        @id @default(autoincrement())
+  userId       Int        @map("user_id")
+  restaurantId Int        @map("restaurant_id")
+  body         String
+  score        Float
+  createdAt    DateTime   @default(now()) @map("created_at")
+  user         User       @relation(fields: [userId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@map("review")
+}
+
+model Mission {
+  id             Int             @id @default(autoincrement())
+  restaurantId   Int             @map("restaurant_id")
+  name           String
+  missionSpec    String          @map("mission_spec")
+  rewardPoints   Int             @map("reward_points")
+  restaurant     Restaurant      @relation(fields: [restaurantId], references: [id])
+  missionRecords MissionRecord[]
+
+  @@map("mission")
+}
+
+model MissionRecord {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  missionId Int      @map("mission_id")
+  status    String   @default("CHALLENGING")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+  mission   Mission  @relation(fields: [missionId], references: [id])
+
+  @@map("mission_record")
+}
