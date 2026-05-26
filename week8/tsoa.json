@@ -1,0 +1,15 @@
+{
+  "entryFile": "src/index.ts",
+  "noImplicitAdditionalProperties": "throw-on-extras",
+  "controllerPathGlobs": ["src/**/*.controller.ts"],
+  "spec": {
+    "outputDirectory": "dist",
+    "specVersion": 3,
+    "name": "Week8 API",
+    "description": "UMC 8주차 과제 API 명세서",
+    "basePath": "/api/v1"
+  },
+  "routes": {
+    "routesDir": "src/generated"
+  }
+}
