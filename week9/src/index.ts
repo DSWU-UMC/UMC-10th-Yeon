@@ -1,5 +1,5 @@
+import "dotenv/config";
 import "reflect-metadata";
-import dotenv from "dotenv";
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -10,8 +10,6 @@ import jwt from "jsonwebtoken";
 import passport from "./middleware/passport.js";
 import { RegisterRoutes } from "./generated/routes.js";
 import { AppError } from "./common/errors/app.error.js";
-
-dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 3000;
